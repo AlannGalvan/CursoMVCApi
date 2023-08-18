@@ -6,6 +6,7 @@
     <edmx:Diagrams>
       <Diagram DiagramId="506079809c164a77a4c9d8f7673796a6" Name="Diagram1">
         <EntityTypeShape EntityType="CursoMVCApiModel.user" Width="1.5" PointX="0.75" PointY="0.75" />
+        <EntityTypeShape EntityType="CursoMVCApiModel.animal" Width="1.5" PointX="3.375" PointY="0.75" />
       </Diagram>
     </edmx:Diagrams>
   </edmx:Designer>
