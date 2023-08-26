@@ -6,7 +6,10 @@ using System.Net.Http;
 using System.Web.Http;
 using CursoMVCApi.Models.WS;
 using CursoMVCApi.Models;
-
+using System.Threading.Tasks;
+using System.Web;
+using System.IO;
+using System.Text;
 
 namespace CursoMVCApi.Controllers
 {
@@ -131,7 +134,7 @@ namespace CursoMVCApi.Controllers
             return oR;
         }
 
-        [HttpPost]
+        [HttpDelete]
         public Reply Delete([FromBody] AnimalViewModel model)
         {
             Reply oR = new Reply();
@@ -166,6 +169,70 @@ namespace CursoMVCApi.Controllers
 
             return oR;
         }
+
+
+        [HttpPost]
+        public async Task<Reply> Photo([FromUri] AnimalPictureViewModel model)
+        {
+            Reply oR = new Reply();
+            oR.result = 0;
+
+            string root =HttpContext.Current.Server.MapPath("~/App_Data");
+            var provider = new MultipartFileStreamProvider(root);
+
+            if (!Verify(model.token))
+            {
+                oR.message = "no autorizado";
+                return oR;
+            }
+            //viene multipart
+            if (!Request.Content.IsMimeMultipartContent())
+            {
+                oR.message = "no tiene imagen";
+                return oR;
+            }
+
+            await Request.Content.ReadAsMultipartAsync(provider);
+
+            FileInfo fileInfoPicture = null;
+
+            foreach (MultipartFileData fileData in provider.FileData)
+            {
+                if (fileData.Headers.ContentDisposition.Name.Replace("\\","").Replace("\"","").Equals("picture"))
+                    fileInfoPicture = new FileInfo(fileData.LocalFileName);
+            }
+
+            if(fileInfoPicture != null)
+            {
+                using (FileStream fs=fileInfoPicture.Open(FileMode.Open,FileAccess.Read))
+                {
+                    byte[] b = new byte[fileInfoPicture.Length];
+                    UTF8Encoding temp = new UTF8Encoding(true);
+                    while (fs.Read(b,0,b.Length)>0);
+
+                    try
+                    {
+                        using (CursoMVCApiEntities db = new CursoMVCApiEntities())
+                        {
+                            var oAnimal = db.animal.Find(model.Id);
+                            oAnimal.picture = b;
+                            db.Entry(oAnimal).State = System.Data.Entity.EntityState.Modified;
+                            db.SaveChanges();
+                            oR.result = 1;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+
+                        oR.message = "Intenta más tarde";
+                    }
+                       
+                }
+            }
+
+            return oR;
+        }
+
 
         #region HELPERS
 
